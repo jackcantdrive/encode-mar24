@@ -1,5 +1,3 @@
-'use strict';
-
 const apiKey = "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";
 
 const OpenAI = require('openai');
@@ -11,12 +9,11 @@ const port = 3000;
 
 const openai = new OpenAI({apiKey: apiKey});
 
-async function generateText(message) {
+async function generateText(context) {
     const completion = await openai.chat.completions.create({
-        messages: [{"role": "user", "content": message}],
+        messages: context,
         model: "gpt-3.5-turbo",
     });
-
     return completion.choices[0].message.content;
 }
 
@@ -62,9 +59,11 @@ async function sends_message(number, message, additional) {
         console.error("Authentication failed. Message not sent.");
     }
 
+    const context = [];
     client.on('ready', () => {
         console.log('READY');
         client.sendMessage(number, message);
+        context.push({"role": "assistant", "content": message});
         console.log('MESSAGE SENT');
     });
 
@@ -73,9 +72,12 @@ async function sends_message(number, message, additional) {
         console.log('MESSAGE RECEIVED', msg);
 
         if (msg.from === number) {
+            context.push({"role": "user", "content": msg.body});
             const prompt = "Generate a response message for: "+msg.body+"\n Keep in mind: "+additional;
-            const response = await generateText(prompt);
+            context.push({"role": "system", "content": prompt});
+            const response = await generateText(context);
             msg.reply(response);
+            context.push({"role": "assistant", "content": response});
         }
     });
 }
@@ -89,7 +91,8 @@ app.listen(port, () => {
 app.post('/sends-message', async (req, res) => {
     const {number, message, additional} = req.body;
     const prompt = "Generate a a text message for: "+message+"\n Keep in mind: "+additional;
-    const to_send = await generateText(prompt);
+    const context = [{role: "system", content: "you are a physical human texting another physical human"}, {role: "system", content: prompt}]
+    const to_send = await generateText(context);
     sends_message(number + '@c.us', to_send, additional);
     res.send({msg:to_send});
 });
