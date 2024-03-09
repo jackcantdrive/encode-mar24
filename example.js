@@ -1,7 +1,13 @@
+'use strict';
+
 const apiKey = "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";
-// const axios = require('axios');
 
 const OpenAI = require('openai');
+
+const express = require('express');
+const bodyParser = require('body-parser');
+const app = express();
+const port = 3000;
 
 const openai = new OpenAI({apiKey: apiKey});
 
@@ -13,7 +19,6 @@ async function generateText(message) {
 
     return completion.choices[0].message.content;
 }
-
 
 const { Client, Location, Poll, List, Buttons, LocalAuth } = require('whatsapp-web.js');
 
@@ -34,19 +39,16 @@ function authenticateUser() {
         });
 
         client.on('qr', (qr) => {
-            // NOTE: This event will not be fired if a session is specified.
             console.log('QR RECEIVED', qr);
         });
 
         client.on('authenticated', () => {
             console.log('AUTHENTICATED');
-            resolve(true); // Resolve the promise when authenticated
+            resolve(true);
         });
 
         client.on('auth_failure', msg => {
-            // Fired if session restore was unsuccessful
             console.error('AUTHENTICATION FAILURE', msg);
-            // reject(new Error('Authentication failed')); // Reject the promise on authentication failure
             resolve(false);
         });
     });
@@ -58,27 +60,24 @@ async function sends_message(number, message) {
     if (!isAuthenticated) {
         // Handle failed authentication (e.g., display error message)
         console.error("Authentication failed. Message not sent.");
-      } 
-      client.on('ready', () => {
+    }
+
+    client.on('ready', () => {
         console.log('READY');
         client.sendMessage(number, message);
         console.log('MESSAGE SENT');
-        });
-// when receive message from number
-client.on('message', async msg => {
-    console.log('MESSAGE RECEIVED', msg);
+    });
 
-    if (msg.from === '447529181976@c.us') {
-        const response = await generateText(message);
-        msg.reply(response);
-    }
-});
+    // when receive message from number
+    client.on('message', async msg => {
+        console.log('MESSAGE RECEIVED', msg);
+
+        if (msg.from === '447529181976@c.us') {
+            const response = await generateText(message);
+            msg.reply(response);
+        }
+    });
 }
-
-const express = require('express');
-const bodyParser = require('body-parser');
-const app = express();
-const port = 3000;
 
 app.use(bodyParser.json());
 
@@ -90,6 +89,5 @@ app.post('/sends-message', async (req, res) => {
     const {number, message} = req.body;
     const to_send = await generateText(message);
     sends_message(number + '@c.us', to_send);
-    // sends_message(number + '@c.us', 'foo');
     res.send({msg:to_send});
 });
