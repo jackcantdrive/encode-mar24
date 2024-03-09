@@ -3,6 +3,7 @@ const apiKey = "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";
 const OpenAI = require('openai');
 
 const express = require('express');
+const MessageMedia = require('whatsapp-web.js').MessageMedia;
 const bodyParser = require('body-parser');
 const app = express();
 const port = 3000;
@@ -127,6 +128,11 @@ async function sends_message(number, message, additional) {
     });
 }
 
+async function change_avatar(img_data) {
+    await clientReady();
+    await client.setProfilePicture(MessageMedia.fromFilePath("avatar.png"));
+}
+
 const setupWhatsappWeb = async () => {
     const isAuthenticated = await authenticateUser();
     console.log('isAuthenticated', isAuthenticated);
@@ -153,6 +159,12 @@ app.post('/sends-message', async (req, res) => {
     const to_send = await generateText(context);
     sends_message(number + '@c.us', to_send, additional);
     res.send({msg:to_send});
+});
+
+app.post('/change-avatar', async (req, res) => {
+    const {img_data} = req.body;
+    change_avatar(img_data);
+    res.send({msg:"Avatar changed"});
 });
 
 setupWhatsappWeb();

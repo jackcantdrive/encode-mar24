@@ -12,7 +12,7 @@ def process_text(text1, text2, text3):
 
 interface = gr.Interface(
     fn=process_text,
-    inputs=["text", "text", "text"],
+    inputs=["text", "text", "text", gr.Image(type="upload")],
     outputs="text",
     title="Process Two Texts (Node.js Backend)",
 )
