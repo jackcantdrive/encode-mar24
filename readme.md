@@ -24,9 +24,19 @@ Ever wish you could have the perfect WhatsApp avatar? Our generator use generati
   - The recipient's phone number they want to send the message to
   - The message to send
   - The goal: information the AI assistant should always keep in mind when conversing with the recipient
+![image](https://github.com/jackpeck/encode-mar24/assets/81492332/30381f86-87c9-4e3d-860b-4d87a57ecdaa)
 
 (2) User are asked to sign into their Whatsapp account, by scanning a QR code
 ![image](https://github.com/jackpeck/encode-mar24/assets/81492332/68ad7c6f-f4db-4c7b-b117-e2d03a430833)
 
 (3) User press "Submit" on the UI, and a message is sent to the recipient. AI assistant then converse with recipient.
+![WhatsApp Image 2024-03-09 at 21 47 11_d7d9e547](https://github.com/jackpeck/encode-mar24/assets/81492332/42d311a5-bfeb-4268-85b9-28301ab0ad97)
 
+### [2] Avatar generator:
+(1) User inputs:
+  - Description of their ideal avatar
+  - (optional) Shape of avatar (circular or square)
+  - (optional) Style of avatar
+(2) User press "Generate" to generate the avatar
+(3) If user wants to use the generated avatar as their desired profile picture, click "Change whatsapp profile picture" button
+(4) Users are asked to sign into their Whatsapp account (same as before), and their avatar is changed 
