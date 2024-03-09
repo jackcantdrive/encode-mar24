@@ -30,6 +30,7 @@ const client = new Client({
         headless: false
     }
 });
+
 function authenticateUser() {
     return new Promise((resolve, reject) => {
         client.initialize();
@@ -54,30 +55,85 @@ function authenticateUser() {
     });
 }
 
+let isReady = false;
+
+async function clientReady() {
+    return new Promise((resolve, reject) => {
+
+        if (isReady) {
+            resolve(true);
+            return;
+        }
+
+        client.on('ready', () => {
+            isReady = true;
+            console.log('READY');
+            resolve(true);
+        });
+    });
+}
+
+client.promises ??= {};
+client.promises.sendMessage = (number, message) => {
+    return new Promise((resolve, reject) => {
+        client.sendMessage(number, message);
+        resolve();
+    });
+}
+
+const clientOnMessageHandlers = [];
+const addClientOnMessageHandler = (handler) => {
+    clientOnMessageHandlers.push(handler);
+
+    return handler;
+}
+
+const removeClientOnMessageHandler = (handler) => {
+    const index = clientOnMessageHandlers.indexOf(handler);
+    if (index > -1) {
+        clientOnMessageHandlers.splice(index, 1);
+    }
+}
+
+client.on('message', async msg => {
+    console.log('MESSAGE RECEIVED', msg);
+    for (const handler of clientOnMessageHandlers) {
+        await handler(msg);
+    }
+});
+
 async function sends_message(number, message, additional) {
-    const isAuthenticated = await authenticateUser();
-    console.log('isAuthenticated', isAuthenticated);
-    if (!isAuthenticated) {
-        // Handle failed authentication (e.g., display error message)
-        console.error("Authentication failed. Message not sent.");
+    await clientReady();
+
+    const conversation = [];
+
+    const sendMessage = async (message) => {
+        await client.promises.sendMessage(number, message);
+        conversation.push({from: 'me', message});
     }
 
-    client.on('ready', () => {
-        console.log('READY');
-        client.sendMessage(number, message);
-        console.log('MESSAGE SENT');
-    });
+    await sendMessage(message);
 
-    // when receive message from number
-    client.on('message', async msg => {
+    const handler = addClientOnMessageHandler(async msg => {
         console.log('MESSAGE RECEIVED', msg);
 
         if (msg.from === number) {
-            const prompt = "Generate a response message for: "+msg.body+"\n Keep in mind: "+additional;
+            conversation.push({from: 'them', message: msg.body});
+            const prompt = "Generate a response message for: " + msg.body + "\n Keep in mind: "+ additional;
             const response = await generateText(prompt);
-            msg.reply(response);
+            await sendMessage(response);
         }
     });
+}
+
+const setupWhatsappWeb = async () => {
+    const isAuthenticated = await authenticateUser();
+    console.log('isAuthenticated', isAuthenticated);
+    if (!isAuthenticated) {
+        console.error("Authentication failed. Message not sent.");
+    }
+
+    await clientReady();
 }
 
 app.use(bodyParser.json());
@@ -93,3 +149,5 @@ app.post('/sends-message', async (req, res) => {
     sends_message(number + '@c.us', to_send, additional);
     res.send({msg:to_send});
 });
+
+setupWhatsappWeb();
