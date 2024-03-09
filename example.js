@@ -54,7 +54,7 @@ function authenticateUser() {
     });
 }
 
-async function sends_message(number, message) {
+async function sends_message(number, message, additional) {
     const isAuthenticated = await authenticateUser();
     console.log('isAuthenticated', isAuthenticated);
     if (!isAuthenticated) {
@@ -72,8 +72,9 @@ async function sends_message(number, message) {
     client.on('message', async msg => {
         console.log('MESSAGE RECEIVED', msg);
 
-        if (msg.from === '447529181976@c.us') {
-            const response = await generateText(message);
+        if (msg.from === number) {
+            const prompt = "Generate a response message for: "+msg.body+"\n Keep in mind: "+additional;
+            const response = await generateText(prompt);
             msg.reply(response);
         }
     });
@@ -86,8 +87,9 @@ app.listen(port, () => {
 });
 
 app.post('/sends-message', async (req, res) => {
-    const {number, message} = req.body;
-    const to_send = await generateText(message);
-    sends_message(number + '@c.us', to_send);
+    const {number, message, additional} = req.body;
+    const prompt = "Generate a a text message for: "+message+"\n Keep in mind: "+additional;
+    const to_send = await generateText(prompt);
+    sends_message(number + '@c.us', to_send, additional);
     res.send({msg:to_send});
 });
