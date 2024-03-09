@@ -119,7 +119,7 @@ def process_text(recipient_number, message, goal):
 
 interface = gr.Interface(
     fn=process_text,
-    inputs=["text", "text", "text", gr.Image()],
+    inputs=["text", "text", "text"],
     outputs="text",
     title="Send a message to someone using AI, and let AI communicate for you!",
 )
