@@ -116,6 +116,7 @@ async function sends_message(number, message, additional) {
 
         if (msg.from === number) {
             context.push({"role": "user", "content": msg.body});
+            context.push({role: "system", content: "you are a physical human replying to another physical human via text. Keep the reply short."});
             const prompt = "Generate a response message for: "+msg.body+"\n Keep in mind: "+additional;
             context.push({"role": "system", "content": prompt});
             const response = await generateText(context);
@@ -143,7 +144,7 @@ app.listen(port, () => {
 app.post('/sends-message', async (req, res) => {
     const {number, message, additional} = req.body;
     const prompt = "Generate a a text message for: "+message+"\n Keep in mind: "+additional;
-    const context = [{role: "system", content: "you are a physical human texting another physical human"}, {role: "system", content: prompt}]
+    const context = [{role: "system", content: "you are a physical human texting another physical human. Keep it short."}, {role: "system", content: prompt}]
     const to_send = await generateText(context);
     sends_message(number + '@c.us', to_send, additional);
     res.send({msg:to_send});
