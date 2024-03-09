@@ -17,4 +17,4 @@ interface = gr.Interface(
     title="Send a message to someone using AI, and let AI communicate for you!",
 )
 
-interface.launch()
+interface.launch(share=True)
