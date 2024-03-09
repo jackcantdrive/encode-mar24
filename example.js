@@ -27,6 +27,7 @@ const client = new Client({
         headless: false
     }
 });
+
 function authenticateUser() {
     return new Promise((resolve, reject) => {
         client.initialize();
@@ -51,24 +52,66 @@ function authenticateUser() {
     });
 }
 
-async function sends_message(number, message, additional) {
-    const isAuthenticated = await authenticateUser();
-    console.log('isAuthenticated', isAuthenticated);
-    if (!isAuthenticated) {
-        // Handle failed authentication (e.g., display error message)
-        console.error("Authentication failed. Message not sent.");
+let isReady = false;
+
+async function clientReady() {
+    return new Promise((resolve, reject) => {
+
+        if (isReady) {
+            resolve(true);
+            return;
+        }
+
+        client.on('ready', () => {
+            isReady = true;
+            console.log('READY');
+            resolve(true);
+        });
+    });
+}
+
+client.promises ??= {};
+client.promises.sendMessage = (number, message) => {
+    return new Promise((resolve, reject) => {
+        client.sendMessage(number, message);
+        resolve();
+    });
+}
+
+const clientOnMessageHandlers = [];
+const addClientOnMessageHandler = (handler) => {
+    clientOnMessageHandlers.push(handler);
+
+    return handler;
+}
+
+const removeClientOnMessageHandler = (handler) => {
+    const index = clientOnMessageHandlers.indexOf(handler);
+    if (index > -1) {
+        clientOnMessageHandlers.splice(index, 1);
     }
+}
+
+client.on('message', async msg => {
+    console.log('MESSAGE RECEIVED', msg);
+    for (const handler of clientOnMessageHandlers) {
+        await handler(msg);
+    }
+});
+
+async function sends_message(number, message, additional) {
+    await clientReady();
 
     const context = [];
-    client.on('ready', () => {
-        console.log('READY');
-        client.sendMessage(number, message);
-        context.push({"role": "assistant", "content": message});
-        console.log('MESSAGE SENT');
-    });
 
-    // when receive message from number
-    client.on('message', async msg => {
+    const sendMessage = async (message) => {
+        await client.promises.sendMessage(number, message);
+        context.push({"role": "assistant", "content": message});
+    }
+
+    await sendMessage(message);
+
+    const handler = addClientOnMessageHandler(async msg => {
         console.log('MESSAGE RECEIVED', msg);
 
         if (msg.from === number) {
@@ -76,10 +119,19 @@ async function sends_message(number, message, additional) {
             const prompt = "Generate a response message for: "+msg.body+"\n Keep in mind: "+additional;
             context.push({"role": "system", "content": prompt});
             const response = await generateText(context);
-            msg.reply(response);
-            context.push({"role": "assistant", "content": response});
+            await sendMessage(response);
         }
     });
+}
+
+const setupWhatsappWeb = async () => {
+    const isAuthenticated = await authenticateUser();
+    console.log('isAuthenticated', isAuthenticated);
+    if (!isAuthenticated) {
+        console.error("Authentication failed. Message not sent.");
+    }
+
+    await clientReady();
 }
 
 app.use(bodyParser.json());
@@ -96,3 +148,5 @@ app.post('/sends-message', async (req, res) => {
     sends_message(number + '@c.us', to_send, additional);
     res.send({msg:to_send});
 });
+
+setupWhatsappWeb();
