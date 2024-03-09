@@ -20,6 +20,13 @@ Ever wish you could have the perfect WhatsApp avatar? Our generator use generati
 
 ## Overview:
 ### [1] AI-powered assistant:
-  (1) User inputs:
-      - The recipient's phone number they want to send the message to
-      - The messg
+(1) User inputs:
+  - The recipient's phone number they want to send the message to
+  - The message to send
+  - The goal: information the AI assistant should always keep in mind when conversing with the recipient
+
+(2) User are asked to sign into their Whatsapp account, by scanning a QR code
+![image](https://github.com/jackpeck/encode-mar24/assets/81492332/68ad7c6f-f4db-4c7b-b117-e2d03a430833)
+
+(3) User press "Submit" on the UI, and a message is sent to the recipient. AI assistant then converse with recipient.
+
