@@ -82,9 +82,10 @@ app.listen(port, () => {
     console.log(`Example app listening at http://localhost:${port}`);
 });
 
-app.post('/sends-message', (req, res) => {
+app.post('/sends-message', async (req, res) => {
     const {number, message} = req.body;
-    to_send = generateText(message);
+    const to_send = await generateText(message);
     sends_message(number + '@c.us', to_send);
+    // sends_message(number + '@c.us', 'foo');
     res.send({msg:to_send});
 });
