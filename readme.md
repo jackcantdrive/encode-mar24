@@ -1,4 +1,4 @@
-# WhatzBot
+# WhatsBot
 ## Design Brief
 Our project offers 2 innovative tools for whatsapp:
 ### [1] AI-powered assistant:
@@ -18,3 +18,8 @@ Ever wish you could have the perfect WhatsApp avatar? Our generator use generati
 - GitHub for code hosting, CI, code review, project management
 - VS Code IDE
 
+## Overview:
+### [1] AI-powered assistant:
+  (1) User inputs:
+      - The recipient's phone number they want to send the message to
+      - The messg
