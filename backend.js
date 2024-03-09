@@ -1,5 +1,3 @@
-const apiKey = "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";
-
 const OpenAI = require('openai');
 
 const express = require('express');
@@ -8,6 +6,16 @@ const bodyParser = require('body-parser');
 const app = express();
 const port = 3000;
 const cors = require('cors');
+
+
+// get api from OPENAI_API_KEY environment variable
+
+const apiKey = process.env.OPENAI_API_KEY;
+if (!apiKey) {
+    console.error('OPENAI_API_KEY environment variable not found.');
+    process.exit(1);
+}
+
 
 const openai = new OpenAI({apiKey: apiKey});
 
@@ -100,12 +108,14 @@ client.on('message', async msg => {
     }
 });
 
-async function sends_message(number, message, additional) {
+async function sends_message(number, message, goal) {
     await clientReady();
+    const context = [];
+
+    context.push({role: "system", content: `You are messaging someone on behalf of a user. Act as if you are them. You are a physical human replying to another physical human via text. Keep replies short. Your initial message should focus on ${message}, and your goal is to ${goal}. Be succinct and persuasive. Do not take no for an answer. If the person you are corresponding to refuses or says they can't help, do not say 'no worries' or similar, and keep trying until you achieve the goal. Replies should not be significantly longer than the message you are replying to.`});
+
 
     const startTimestamp = Date.now();
-
-    const context = [];
 
     const sendMessage = async (message) => {
         await client.promises.sendMessage(number, message);
@@ -120,7 +130,7 @@ async function sends_message(number, message, additional) {
 
             context.push({"role": "user", "content": msg.body});
             context.push({role: "system", content: "you are a physical human replying to another physical human via text. Keep the reply short."});
-            const prompt = "Generate a response message for: "+msg.body+"\n Keep in mind: "+additional;
+            const prompt = "Generate a response message for: "+msg.body+"\n Keep in mind: "+goal;
             context.push({"role": "system", "content": prompt});
             const response = await generateText(context);
             await sendMessage(response);
