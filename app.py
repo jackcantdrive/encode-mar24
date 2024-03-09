@@ -12,12 +12,15 @@ import requests
 CUSTOM_PATH = "/custom"
 app = FastAPI()
 
-HELLO_ROUTE = "/hello"
-GOODBYE_ROUTE = "/goodbye"
+AVATAR_ROUTE = "/avatar"
+CHAT_ROUTE = "/chat"
 iframe_dimensions = "height=300px width=1000px"
 
 index_html = f'''
 <h1> Whatsapp Tooling using stability AI </h1>
+<div> We have two tools available for you to use. </div>
+<div> <a href="{AVATAR_ROUTE}" target="_blank" {iframe_dimensions}> Generate Avatar </a> </div>
+<div> <a href="{CHAT_ROUTE}" target="_blank" {iframe_dimensions}> Send Message, and let AI do the talking for you </a> </div>
 '''
 
 @app.get("/", response_class=HTMLResponse)
@@ -104,12 +107,12 @@ with gr.Blocks() as demo:
         response = requests.post(url, json={"data": "avatar.png"})
         response.raise_for_status()  # Raise an error for non-200 status codes
 
-hello_app = demo
+avatar_app = demo
 
-def process_text(text1, text2, text3):
+def process_text(recipient_number, message, goal):
   # Send data to Node.js backend
   url = "http://localhost:3000/sends-message"  # Adjust URL based on your setup
-  response = requests.post(url, json={"number": text1, "message": text2, "additional": text3})
+  response = requests.post(url, json={"number": recipient_number, "message": message, "additional": goal})
   response.raise_for_status()  # Raise an error for non-200 status codes
   data = response.json()
   return data["msg"]
@@ -118,14 +121,14 @@ interface = gr.Interface(
     fn=process_text,
     inputs=["text", "text", "text", gr.Image()],
     outputs="text",
-    title="Process Two Texts (Node.js Backend)",
+    title="Send a message to someone using AI, and let AI communicate for you!",
 )
 
-goodbye_app = interface
+chat_app = interface
 
 
-app = gr.mount_gradio_app(app, hello_app, path=HELLO_ROUTE)
-app = gr.mount_gradio_app(app, goodbye_app, path=GOODBYE_ROUTE)
+app = gr.mount_gradio_app(app, avatar_app, path=AVATAR_ROUTE)
+app = gr.mount_gradio_app(app, chat_app, path=CHAT_ROUTE)
 
 if __name__ == "__main__":
     import uvicorn
