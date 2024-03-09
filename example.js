@@ -67,7 +67,11 @@ async function sends_message(number, message) {
 // when receive message from number
 client.on('message', async msg => {
     console.log('MESSAGE RECEIVED', msg);
-    const response = await generateText(msg.body);
+
+    if (msg.from === '447529181976@c.us') {
+        const response = await generateText(message);
+        msg.reply(response);
+    }
 });
 }
 
