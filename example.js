@@ -6,6 +6,7 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const app = express();
 const port = 3000;
+const cors = require('cors');
 
 const openai = new OpenAI({apiKey: apiKey});
 
@@ -93,7 +94,6 @@ const removeClientOnMessageHandler = (handler) => {
 }
 
 client.on('message', async msg => {
-    console.log('MESSAGE RECEIVED', msg);
     for (const handler of clientOnMessageHandlers) {
         await handler(msg);
     }
@@ -101,6 +101,8 @@ client.on('message', async msg => {
 
 async function sends_message(number, message, additional) {
     await clientReady();
+
+    const startTimestamp = Date.now();
 
     const context = [];
 
@@ -112,9 +114,9 @@ async function sends_message(number, message, additional) {
     await sendMessage(message);
 
     const handler = addClientOnMessageHandler(async msg => {
-        console.log('MESSAGE RECEIVED', msg);
+        if (msg.from === number && msg.timestamp * 1000 > startTimestamp) {
+            console.log('MESSAGE RECEIVED', msg);
 
-        if (msg.from === number) {
             context.push({"role": "user", "content": msg.body});
             context.push({role: "system", content: "you are a physical human replying to another physical human via text. Keep the reply short."});
             const prompt = "Generate a response message for: "+msg.body+"\n Keep in mind: "+additional;
@@ -136,13 +138,16 @@ const setupWhatsappWeb = async () => {
 }
 
 app.use(bodyParser.json());
+app.use(cors());
 
 app.listen(port, () => {
     console.log(`Example app listening at http://localhost:${port}`);
 });
 
 app.post('/sends-message', async (req, res) => {
-    const {number, message, additional} = req.body;
+    const {number: rawNumber, message, additional} = req.body;
+    const number = rawNumber.replace('+', ''); // remove + from number
+
     const prompt = "Generate a a text message for: "+message+"\n Keep in mind: "+additional;
     const context = [{role: "system", content: "you are a physical human texting another physical human. Keep it short."}, {role: "system", content: prompt}]
     const to_send = await generateText(context);
