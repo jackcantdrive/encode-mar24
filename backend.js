@@ -27,9 +27,39 @@ async function generateText(context) {
     return completion.choices[0].message.content;
 }
 
-const { Client, Location, Poll, List, Buttons, LocalAuth } = require('whatsapp-web.js');
+async function generateImage(prompt, callback) {
+    const options = {
+      url: 'https://api.stability.ai/v1/generation/stable-diffusion-xl-1024-v1-0/text-to-image',
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${process.env.STABILITY_KEY}`
+      },
+      json: {
+        prompt: prompt,
+        // Additional options (refer to Stability.ai API documentation)
+        num_images: 1, // Number of images to generate (default: 1)
+        size: 1024, // Image size (default: 512)
+      }
+    };
+  
+    request(options, (error, response, body) => {
+      if (error) {
+        callback(error);
+        return;
+      }
+  
+      if (response.statusCode !== 200) {
+        callback(new Error(`API Error: ${response.statusCode}`));
+        return;
+      }
+  
+      callback(null, body); // body contains the generated image data
+    });
+  }
+  
 
-const client = new Client({
+const { Client, Location, Poll, List, Buttons, LocalAuth } = require('whatsapp-web.js');
+client = new Client({
     authStrategy: new LocalAuth(),
     // proxyAuthentication: { username: 'username', password: 'password' },
     puppeteer: { 
@@ -38,8 +68,8 @@ const client = new Client({
     }
 });
 
-function authenticateUser() {
-    return new Promise((resolve, reject) => {
+async function authenticateUser() {
+    return new Promise(async (resolve, reject) => {
         client.initialize();
 
         client.on('loading_screen', (percent, message) => {
@@ -50,7 +80,7 @@ function authenticateUser() {
             console.log('QR RECEIVED', qr);
         });
 
-        client.on('authenticated', () => {
+        client.on('authenticated', async () => {
             console.log('AUTHENTICATED');
             resolve(true);
         });
@@ -137,11 +167,56 @@ async function sends_message(number, message, goal) {
         }
     });
 }
+const fs = require("fs");
+const fetch = require("node-fetch");
+const path = "https://api.stability.ai/v1/generation/stable-diffusion-xl-1024-v1-0/text-to-image";
 
-async function change_avatar(img_data) {
+const headers = {
+    Accept: "application/json",
+    Authorization: "Bearer "+process.env.STABILITY_KEY,
+    "Content-Type": "application/json",
+};
+
+const generateAvatar = async (prompt) => {
+    const body = {
+        steps: 50,
+        width: 1024,
+        height: 1024,
+        seed: 0,
+        cfg_scale: 8,
+        samples: 1,
+        text_prompts: [
+            {
+                "text": prompt,
+                "weight": 1
+            }
+        ],
+    };
+    const response = await fetch(
+        path,
+        {
+            headers,
+            method: "POST",
+            body: JSON.stringify(body),
+        }
+    );
+    if (!response.ok) {
+        throw new Error(`Non-200 response: ${await response.text()}`)
+    }
+    const responseJSON = await response.json();
+    responseJSON.artifacts.forEach((image, index) => {
+        fs.writeFileSync(
+            `avatar.png`,
+            Buffer.from(image.base64, 'base64')
+        )
+    });
+}
+
+async function change_avatar(prompt) {
     await clientReady();
     await client.setProfilePicture(MessageMedia.fromFilePath("avatar.png"));
 }
+
 
 const setupWhatsappWeb = async () => {
     const isAuthenticated = await authenticateUser();
@@ -161,6 +236,8 @@ app.listen(port, () => {
 });
 
 app.post('/sends-message', async (req, res) => {
+    await setupWhatsappWeb();
+
     const {number: rawNumber, message, additional} = req.body;
     const number = rawNumber.replace('+', ''); // remove + from number
 
@@ -172,9 +249,16 @@ app.post('/sends-message', async (req, res) => {
 });
 
 app.post('/change-avatar', async (req, res) => {
-    const {img_data} = req.body;
-    change_avatar(img_data);
+    await setupWhatsappWeb();
+
+    const {data} = req.body;
+    change_avatar(data);
     res.send({msg:"Avatar changed"});
 });
 
-setupWhatsappWeb();
+app.post('/generate-avatar', async (req, res) => {
+    const {data} = req.body;
+    ans = await generateAvatar(data);
+    console.log("ans", ans)
+    res.send({img: "generated"});
+});
