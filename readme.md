@@ -40,9 +40,8 @@ Ever wish you could have the perfect WhatsApp avatar? Our generator use generati
 ![image](https://github.com/jackpeck/encode-mar24/assets/81492332/b8a8f410-7829-40c1-8e54-a14dee36ca3f)
 
 (2) User press "Generate" to generate the avatar
-![image](https://github.com/jackpeck/encode-mar24/assets/81492332/eda32537-ff5d-4cc2-9c7e-88cace170d40)
+![image](https://github.com/jackpeck/encode-mar24/assets/81492332/05b20b28-630f-4595-94a2-437b9cf77946)
 
 (3) If user wants to use the generated avatar as their desired profile picture, click "Change whatsapp profile picture" button
 (4) Users are asked to sign into their Whatsapp account (same as before), and their avatar is changed 
-![image](https://github.com/jackpeck/encode-mar24/assets/81492332/05b20b28-630f-4595-94a2-437b9cf77946)
-
+![image](https://github.com/jackpeck/encode-mar24/assets/81492332/eda32537-ff5d-4cc2-9c7e-88cace170d40)
