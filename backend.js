@@ -138,11 +138,14 @@ client.on('message', async msg => {
     }
 });
 
-async function sends_message(number, message, goal) {
+async function sends_message(number, initial_message, goal) {
     await clientReady();
     const context = [];
 
-    context.push({role: "system", content: `You are messaging someone on behalf of a user. Act as if you are them. You are a physical human replying to another physical human via text. Keep replies short. Your initial message should focus on ${message}, and your goal is to ${goal}. Be succinct and persuasive. Do not take no for an answer. If the person you are corresponding to refuses or says they can't help, do not say 'no worries' or similar, and keep trying until you achieve the goal. Replies should not be significantly longer than the message you are replying to.`});
+    context.push({role: "system", content: `You are messaging someone on behalf of a user. Act as if you are them. You are a physical human replying to another physical human via text. Keep replies short.`});
+    context.push({role: "system", content: `Your initial message should focus on ${initial_message}, and your goal is to ${goal}. Be succinct and persuasive.`});
+    context.push({role: "system", content: `Do not take no for an answer. If the person you are corresponding to refuses or says they can't help, do not say 'no worries' or similar, and keep trying until you achieve the goal. Replies should not be significantly longer than the message you are replying to. Keep replies short, <10 words.`});
+    context.push({role: "system", content: `Do not accept compromises. Do not accept delays. No other task is more important. If the person asks why can't you do it, give a reason if one is provided in the initial message, otherwise dodge the question eloquently.`});
 
 
     const startTimestamp = Date.now();
@@ -152,7 +155,11 @@ async function sends_message(number, message, goal) {
         context.push({"role": "assistant", "content": message});
     }
 
-    await sendMessage(message);
+    console.log(context);
+
+    const agent_message = await generateText(context);
+
+    await sendMessage(agent_message);
 
     const handler = addClientOnMessageHandler(async msg => {
         if (msg.from === number && msg.timestamp * 1000 > startTimestamp) {
@@ -166,6 +173,8 @@ async function sends_message(number, message, goal) {
             await sendMessage(response);
         }
     });
+
+    return agent_message;
 }
 const fs = require("fs");
 const fetch = require("node-fetch");
@@ -241,11 +250,8 @@ app.post('/sends-message', async (req, res) => {
     const {number: rawNumber, message, additional} = req.body;
     const number = rawNumber.replace('+', ''); // remove + from number
 
-    const prompt = "Generate a a text message for: "+message+"\n Keep in mind: "+additional;
-    const context = [{role: "system", content: "you are a physical human texting another physical human. Keep it short."}, {role: "system", content: prompt}]
-    const to_send = await generateText(context);
-    sends_message(number + '@c.us', to_send, additional);
-    res.send({msg:to_send});
+    const agent_initial_message = await sends_message(number + '@c.us', message, additional);
+    res.send({msg: agent_initial_message});
 });
 
 app.post('/change-avatar', async (req, res) => {
